@@ -1,49 +1,110 @@
 const express = require('express');
 const router = express.Router();
-
-// Mock data for products
-let productos = [];
+const supabase = require('./supabaseClient'); // Importa tu cliente supabase
 
 // Get all products
-router.get('/', (req, res) => {
-    res.json(productos);
+router.get('/', async (req, res) => {
+    const { data, error } = await supabase
+        .from('productos')
+        .select('*');
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    res.json(data);
 });
 
 // Get a product by ID
-router.get('/:id', (req, res) => {
-    const producto = productos.find(p => p.id === parseInt(req.params.id));
-    if (!producto) return res.status(404).send('Product not found');
-    res.json(producto);
+router.get('/:id', async (req, res) => {
+    const { data, error } = await supabase
+        .from('productos')
+        .select('*')
+        .eq('id', req.params.id)
+        .single();
+
+    if (error) return res.status(404).json({ error: 'Producto no encontrado' });
+
+    res.json(data);
 });
 
 // Create a new product
-router.post('/', (req, res) => {
-    const producto = {
-        id: productos.length + 1,
-        name: req.body.name,
-        price: req.body.price
-    };
-    productos.push(producto);
-    res.status(201).json(producto);
+router.post('/', async (req, res) => {
+    // Extraemos todos los campos esperados
+    const {
+        nombre,
+        descripcion,
+        marca,
+        precio,
+        tallas,
+        categoria,
+        tienda_id,
+        imagen_url
+    } = req.body;
+
+    const { data, error } = await supabase
+        .from('productos')
+        .insert([{
+            nombre,
+            descripcion,
+            marca,
+            precio,
+            tallas,       // Enviar como arreglo JSON, ejemplo: ["S", "M", "L"]
+            categoria,
+            tienda_id,
+            imagen_url
+        }])
+        .select()
+        .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    res.status(201).json(data);
 });
 
 // Update a product
-router.put('/:id', (req, res) => {
-    const producto = productos.find(p => p.id === parseInt(req.params.id));
-    if (!producto) return res.status(404).send('Product not found');
+router.put('/:id', async (req, res) => {
+    const {
+        nombre,
+        descripcion,
+        marca,
+        precio,
+        tallas,
+        categoria,
+        tienda_id,
+        imagen_url
+    } = req.body;
 
-    producto.name = req.body.name;
-    producto.price = req.body.price;
-    res.json(producto);
+    const { data, error } = await supabase
+        .from('productos')
+        .update({
+            nombre,
+            descripcion,
+            marca,
+            precio,
+            tallas,
+            categoria,
+            tienda_id,
+            imagen_url
+        })
+        .eq('id', req.params.id)
+        .select()
+        .single();
+
+    if (error) return res.status(404).json({ error: 'Producto no encontrado o actualización fallida' });
+
+    res.json(data);
 });
 
 // Delete a product
-router.delete('/:id', (req, res) => {
-    const productoIndex = productos.findIndex(p => p.id === parseInt(req.params.id));
-    if (productoIndex === -1) return res.status(404).send('Product not found');
+router.delete('/:id', async (req, res) => {
+    const { error } = await supabase
+        .from('productos')
+        .delete()
+        .eq('id', req.params.id);
 
-    productos.splice(productoIndex, 1);
+    if (error) return res.status(404).json({ error: 'Producto no encontrado o eliminación fallida' });
+
     res.status(204).send();
 });
 
 module.exports = router;
+
