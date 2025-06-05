@@ -12,8 +12,8 @@ app.use(express.json());
 
 app.use('/api/productos', productosRoutes);
 app.use('/api/tiendas', tiendasRoutes);
-app.use('/usuarios_perfil', usuariosPerfilRouter);
-app.use('/noticias_blog', noticiasBlogRouter);
+app.use('/api/usuarios_perfil', usuariosPerfilRouter);
+app.use('/api/noticias_blog', noticiasBlogRouter);
 
 const PORT = process.env.PORT || 3000;
 
